@@ -301,7 +301,7 @@ func ParseForm(form url.Values, obj interface{}) error {
 	return nil
 }
 func parseForm_fieldLevel(form url.Values, fieldT *reflect.StructField, fieldV *reflect.Value) error {
-	fmt.Println("fieldT.Name=", fieldT.Name, " ,fieldV.CanSet=", fieldV.CanSet(), " ,fieldT.Anonymous=", fieldT.Anonymous)
+	//fmt.Println("fieldT.Name=", fieldT.Name, " ,fieldV.CanSet=", fieldV.CanSet(), " ,fieldT.Anonymous=", fieldT.Anonymous)
 	//	fieldT.Name= MongoBaseStruct  ,fieldV.CanSet= true  ,fieldT.Anonymous= true
 	//	fieldT.Name= Title  ,fieldV.CanSet= true  ,fieldT.Anonymous= false
 
