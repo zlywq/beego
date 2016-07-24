@@ -300,6 +300,34 @@ func (v *Validation) Check(obj interface{}, checks ...Validator) *Result {
 	return result
 }
 
+func (v *Validation) validPart_fieldLevel(tField *reflect.StructField, vField *reflect.Value) (err error) {
+	var vfs []ValidFunc
+	if tField.Anonymous {
+		fldType2 := tField.Type
+		for i2 := 0; i2 < fldType2.NumField(); i2++ {
+			fld2t := fldType2.Field(i2)
+			fld2v := vField.Field(i2)
+			//fmt.Println("in validPart_fieldLevel", ", tField.Name=", tField.Name, ", i2=", i2, ", fld2t.Name=", fld2t.Name, ", fld2v.Interface=", fld2v.Interface())
+			err = v.validPart_fieldLevel(&fld2t, &fld2v)
+			if err != nil {
+				return
+			}
+		}
+	} else {
+		if vfs, err = getValidFuncs(*tField); err != nil {
+			return
+		}
+
+		for _, vf := range vfs {
+			if _, err = funcs.Call(vf.Name,
+				mergeParam(v, vField.Interface(), vf.Params)...); err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
 // Valid Validate a struct.
 // the obj parameter must be a struct or a struct pointer
 func (v *Validation) Valid(obj interface{}) (b bool, err error) {
@@ -316,15 +344,12 @@ func (v *Validation) Valid(obj interface{}) (b bool, err error) {
 	}
 
 	for i := 0; i < objT.NumField(); i++ {
-		var vfs []ValidFunc
-		if vfs, err = getValidFuncs(objT.Field(i)); err != nil {
+		tField := objT.Field(i)
+		vField := objV.Field(i)
+		//fmt.Println("in Valid, i=", i, ", tField.Name=", tField.Name, ", tField.Anonymous=", tField.Anonymous)
+		err = v.validPart_fieldLevel(&tField, &vField)
+		if err != nil {
 			return
-		}
-		for _, vf := range vfs {
-			if _, err = funcs.Call(vf.Name,
-				mergeParam(v, objV.Field(i).Interface(), vf.Params)...); err != nil {
-				return
-			}
 		}
 	}
 
