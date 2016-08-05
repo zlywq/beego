@@ -571,17 +571,67 @@ func basicKind(v reflect.Value) (kind, error) {
 	return invalidKind, errBadComparisonType
 }
 
+func isZeroValue(objv1 interface{}) (isZeroRet bool, errRet error) {
+	if objv1 == nil {
+		isZeroRet = true
+		return
+	}
+	reflectV1 := reflect.ValueOf(objv1)
+	switch reflectV1.Kind() {
+	case reflect.Bool:
+		isZeroRet = reflectV1.Bool() == false
+		return
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		isZeroRet = reflectV1.Uint() == 0
+		return
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		isZeroRet = reflectV1.Int() == 0
+		return
+	case reflect.Float64, reflect.Float32:
+		isZeroRet = reflectV1.Float() == 0
+		return
+	case reflect.String, reflect.Slice, reflect.Array, reflect.Map:
+		isZeroRet = reflectV1.Len() == 0
+		return
+	default:
+		errRet = errors.New("invalid type for compare zero value")
+		return
+	}
+}
+
 // eq evaluates the comparison a == b || a == c || ...
 func eq(arg1 interface{}, arg2 ...interface{}) (bool, error) {
-	v1 := reflect.ValueOf(arg1)
-	k1, err := basicKind(v1)
-	if err != nil {
-		return false, err
-	}
 	if len(arg2) == 0 {
 		return false, errNoComparison
 	}
+
+	v1 := reflect.ValueOf(arg1)
+	k1, errV1 := basicKind(v1)
 	for _, arg := range arg2 {
+		if arg1 == nil && arg2 == nil {
+			return true, nil
+		} else if arg1 == nil || arg2 == nil {
+			if arg1 == nil {
+				isZ, err := isZeroValue(arg2)
+				if err != nil {
+					return false, err
+				} else {
+					return isZ, nil
+				}
+			} else {
+				isZ, err := isZeroValue(arg1)
+				if err != nil {
+					return false, err
+				} else {
+					return isZ, nil
+				}
+			}
+		}
+
+		if errV1 != nil {
+			return false, errV1
+		}
+
 		v2 := reflect.ValueOf(arg)
 		k2, err := basicKind(v2)
 		if err != nil {
