@@ -161,6 +161,7 @@ func (v *Validation) MinSize(obj interface{}, min int, key string) *Result {
 
 // MaxSize Test that the obj is shorter than max size if type is string or slice
 func (v *Validation) MaxSize(obj interface{}, max int, key string) *Result {
+	//fmt.Println("Validation.MaxSize enter, obj=", obj, ", max=", max, ", key=", key)
 	return v.apply(MaxSize{max, key}, obj)
 }
 
